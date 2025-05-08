@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARED
+  SERVED
+  PAID
+  CANCELLED
+}
+
+enum Role {
+  WAITER
+  CHEF
+  CASHIER
+  ADMIN
+}
+
+model Entity {
+  id        String        @id @default(uuid())
+  name      String        @unique
+  location  String?
+  users     User[]
+  foods     Food[]
+  tables    DiningTable[]
+  orders    Order[]
+  createdAt DateTime      @default(now())
+}
+
+model User {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  username  String   @unique
+  password  String
+  role      Role
+  orders    Order[]  @relation("WaiterOrders")
+  entityId  String
+  entity    Entity   @relation(fields: [entityId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Food {
+  id         String       @id @default(uuid())
+  name       String
+  price      Float
+  available  Boolean      @default(true)
+  entityId   String
+  entity     Entity       @relation(fields: [entityId], references: [id])
+  orderItems OrderItem[]
+  options    FoodOption[] // This will now link directly to FoodOption
+  createdAt  DateTime     @default(now())
+
+  @@unique([name, entityId]) // name must be unique within the entity
+}
+
+model FoodOption {
+  id              String            @id @default(uuid())
+  name            String
+  available       Boolean           @default(true)
+  foodId          String
+  food            Food              @relation(fields: [foodId], references: [id])
+  extraPrice      Float             @default(0)
+  OrderItemOption OrderItemOption[]
+
+  @@unique([name, foodId])
+}
+
+model DiningTable {
+  id        String   @id @default(uuid())
+  number    Int
+  entityId  String
+  entity    Entity   @relation(fields: [entityId], references: [id])
+  orders    Order[]
+  createdAt DateTime @default(now())
+
+  @@unique([number, entityId]) // table number unique per branch
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  diningTableId String
+  diningTable   DiningTable @relation(fields: [diningTableId], references: [id])
+  waiterId      String
+  waiter        User        @relation("WaiterOrders", fields: [waiterId], references: [id])
+  entityId      String
+  entity        Entity      @relation(fields: [entityId], references: [id])
+  items         OrderItem[]
+  status        OrderStatus @default(PENDING)
+  remark        String?
+  tax           Float?      @default(0)
+  discount      Float?      @default(0)
+  subtotal      Float       @default(0)
+  total         Float       @default(0)
+  createdAt     DateTime    @default(now())
+}
+
+model OrderItem {
+  id         String            @id @default(uuid())
+  orderId    String
+  order      Order             @relation(fields: [orderId], references: [id])
+  foodId     String
+  food       Food              @relation(fields: [foodId], references: [id])
+  quantity   Int               @default(1)
+  unitPrice  Float             @default(0) // Food price at order time
+  totalPrice Float             @default(0) // Includes options if needed
+  options    OrderItemOption[]
+
+  @@index([orderId])
+}
+
+model OrderItemOption {
+  id          String     @id @default(uuid())
+  orderItemId String
+  orderItem   OrderItem  @relation(fields: [orderItemId], references: [id])
+  optionId    String
+  option      FoodOption @relation(fields: [optionId], references: [id])
+  quantity    Int        @default(1)
+  unitPrice   Float      @default(0) // Option price at order time
+  totalPrice  Float      @default(0) // unitPrice * quantity
+
+  @@index([optionId])
+}
