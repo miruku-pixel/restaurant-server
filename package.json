@@ -5,7 +5,8 @@
   "scripts": {
     "db:seed": "prisma db seed",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev --respawn index.ts"
+    "dev": "ts-node-dev --respawn index.ts",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} db/seed.ts"
