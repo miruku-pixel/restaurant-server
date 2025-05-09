@@ -12,8 +12,8 @@ import statusRouter from "./routes/status";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const URL = process.env.BASE_URL;
+//const PORT = process.env.PORT || 3000;
+//const URL = process.env.BASE_URL;
 
 app.use(cors());
 app.use(express.json());
@@ -26,8 +26,9 @@ app.use("/api", tableRoutes);
 app.use("/api", ordersRouter);
 app.use("/api", statusRouter);
 
+/*
 app.listen(PORT, () => {
   console.log(`Server running on ${URL}:${PORT}`);
 });
-
+*/
 export default app;
